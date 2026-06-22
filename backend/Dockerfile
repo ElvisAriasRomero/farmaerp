@@ -35,9 +35,7 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-# Comando por defecto: servidor web. Worker/beat lo sobreescriben en render.yaml.
-CMD ["gunicorn", "config.wsgi:application", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "3", \
-     "--timeout", "120", \
-     "--access-logfile", "-"]
+# Comando por defecto: aplica migraciones y arranca el servidor web.
+# (En Free no se permite preDeployCommand, por eso migramos aquí al iniciar.)
+# Worker/beat sobreescriben este comando en render.yaml.
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile -"]

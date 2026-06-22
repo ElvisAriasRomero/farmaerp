@@ -31,8 +31,8 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /api/v1/tienda/categorias/
-    # Migra la base antes de cada despliegue.
-    preDeployCommand: "python manage.py migrate --noinput"
+    # En plan Free no se permite preDeployCommand: las migraciones se ejecutan
+    # al iniciar el contenedor (ver CMD del Dockerfile).
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
