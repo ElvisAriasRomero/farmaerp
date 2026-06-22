@@ -25,7 +25,11 @@ WORKDIR /app
 
 # Instala dependencias primero (mejor cacheo de capas).
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# requirements.txt puede venir en UTF-16 (lo genera PowerShell en Windows).
+# Lo normalizamos a UTF-8 para que pip lo lea correctamente.
+RUN python -c "raw=open('requirements.txt','rb').read(); enc='utf-16' if b'\x00' in raw[:80] else 'utf-8-sig'; open('requirements.txt','w',encoding='utf-8').write(raw.decode(enc))" \
+ && pip install --upgrade pip \
+ && pip install -r requirements.txt
 
 # Copia el código de la aplicación.
 COPY . .
