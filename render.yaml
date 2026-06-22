@@ -1,12 +1,13 @@
 # ============================================================
 # FarmaERP — Blueprint de Render (Infrastructure as Code)
-# Crea: API (Docker) + Worker + Beat + Redis + PostgreSQL + Frontend (static)
+# Despliegue: API (Docker) + Redis + PostgreSQL + Frontend (static)  -> PLAN FREE
 #
-# NOTA SOBRE EL PLAN FREE:
-#   - web (API), static (frontend), redis y postgres tienen tier gratuito.
-#   - Los WORKERS de Celery (worker y beat) REQUIEREN PLAN DE PAGO en Render.
-#     Si despliegas en Free, comenta los bloques 'farmaerp-worker' y
-#     'farmaerp-beat' y actívalos al subir de plan.
+# Los WORKERS de Celery (worker y beat) están COMENTADOS porque requieren
+# plan de pago en Render. Para activarlos cuando subas de plan, descomenta
+# los bloques 'farmaerp-worker' y 'farmaerp-beat' más abajo.
+#
+# NOTA FREE: la base de datos PostgreSQL gratuita expira a los ~30 días y
+# está limitada a 1 GB; el API se duerme tras 15 min de inactividad.
 # ============================================================
 
 databases:
@@ -81,104 +82,6 @@ services:
           name: farmaerp-redis
           property: connectionString
 
-  # ---------------- Celery Worker (requiere plan de pago) ----------------
-  - type: worker
-    name: farmaerp-worker
-    runtime: docker
-    plan: starter
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    dockerCommand: "celery -A config worker --loglevel=info --concurrency=2"
-    envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: config.settings.production
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: farmaerp-api
-          envVarKey: SECRET_KEY
-      - key: DB_ENGINE
-        value: django.db.backends.postgresql
-      - key: DB_HOST
-        fromDatabase:
-          name: farmaerp-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: farmaerp-db
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: farmaerp-db
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: farmaerp-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: farmaerp-db
-          property: password
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: farmaerp-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: farmaerp-redis
-          property: connectionString
-
-  # ---------------- Celery Beat (scheduler, requiere plan de pago) ----------------
-  - type: worker
-    name: farmaerp-beat
-    runtime: docker
-    plan: starter
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    dockerCommand: "celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
-    envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: config.settings.production
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: farmaerp-api
-          envVarKey: SECRET_KEY
-      - key: DB_ENGINE
-        value: django.db.backends.postgresql
-      - key: DB_HOST
-        fromDatabase:
-          name: farmaerp-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: farmaerp-db
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: farmaerp-db
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: farmaerp-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: farmaerp-db
-          property: password
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: farmaerp-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: farmaerp-redis
-          property: connectionString
-
   # ---------------- Frontend web (React + Vite, Static Site) ----------------
   - type: web
     name: farmaerp-web
@@ -194,3 +97,102 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+
+# ============================================================
+# CELERY (requiere plan de pago) — DESCOMENTA PARA ACTIVAR
+# ============================================================
+#  - type: worker
+#    name: farmaerp-worker
+#    runtime: docker
+#    plan: starter
+#    dockerfilePath: ./backend/Dockerfile
+#    dockerContext: ./backend
+#    dockerCommand: "celery -A config worker --loglevel=info --concurrency=2"
+#    envVars:
+#      - key: DJANGO_SETTINGS_MODULE
+#        value: config.settings.production
+#      - key: SECRET_KEY
+#        fromService:
+#          type: web
+#          name: farmaerp-api
+#          envVarKey: SECRET_KEY
+#      - key: DB_ENGINE
+#        value: django.db.backends.postgresql
+#      - key: DB_HOST
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: host
+#      - key: DB_PORT
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: port
+#      - key: DB_NAME
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: database
+#      - key: DB_USER
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: user
+#      - key: DB_PASSWORD
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: password
+#      - key: CELERY_BROKER_URL
+#        fromService:
+#          type: redis
+#          name: farmaerp-redis
+#          property: connectionString
+#      - key: CELERY_RESULT_BACKEND
+#        fromService:
+#          type: redis
+#          name: farmaerp-redis
+#          property: connectionString
+#
+#  - type: worker
+#    name: farmaerp-beat
+#    runtime: docker
+#    plan: starter
+#    dockerfilePath: ./backend/Dockerfile
+#    dockerContext: ./backend
+#    dockerCommand: "celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+#    envVars:
+#      - key: DJANGO_SETTINGS_MODULE
+#        value: config.settings.production
+#      - key: SECRET_KEY
+#        fromService:
+#          type: web
+#          name: farmaerp-api
+#          envVarKey: SECRET_KEY
+#      - key: DB_ENGINE
+#        value: django.db.backends.postgresql
+#      - key: DB_HOST
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: host
+#      - key: DB_PORT
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: port
+#      - key: DB_NAME
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: database
+#      - key: DB_USER
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: user
+#      - key: DB_PASSWORD
+#        fromDatabase:
+#          name: farmaerp-db
+#          property: password
+#      - key: CELERY_BROKER_URL
+#        fromService:
+#          type: redis
+#          name: farmaerp-redis
+#          property: connectionString
+#      - key: CELERY_RESULT_BACKEND
+#        fromService:
+#          type: redis
+#          name: farmaerp-redis
+#          property: connectionString
