@@ -1,0 +1,196 @@
+# ============================================================
+# FarmaERP — Blueprint de Render (Infrastructure as Code)
+# Crea: API (Docker) + Worker + Beat + Redis + PostgreSQL + Frontend (static)
+#
+# NOTA SOBRE EL PLAN FREE:
+#   - web (API), static (frontend), redis y postgres tienen tier gratuito.
+#   - Los WORKERS de Celery (worker y beat) REQUIEREN PLAN DE PAGO en Render.
+#     Si despliegas en Free, comenta los bloques 'farmaerp-worker' y
+#     'farmaerp-beat' y actívalos al subir de plan.
+# ============================================================
+
+databases:
+  - name: farmaerp-db
+    plan: free
+    databaseName: db_prediccion
+    user: farmaerp
+
+services:
+  # ---------------- Redis (broker/result de Celery) ----------------
+  - type: redis
+    name: farmaerp-redis
+    plan: free
+    ipAllowList: []   # solo accesible desde servicios internos de Render
+
+  # ---------------- API Django (Docker) ----------------
+  - type: web
+    name: farmaerp-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/v1/tienda/categorias/
+    # Migra la base antes de cada despliegue.
+    preDeployCommand: "python manage.py migrate --noinput"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      # Orígenes del frontend permitidos por CORS y CSRF (ajusta tras desplegar)
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://farmaerp-web.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://farmaerp-web.onrender.com
+      # Base de datos (inyectada desde farmaerp-db)
+      - key: DB_ENGINE
+        value: django.db.backends.postgresql
+      - key: DB_HOST
+        fromDatabase:
+          name: farmaerp-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: farmaerp-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: farmaerp-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: farmaerp-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: farmaerp-db
+          property: password
+      # Redis (Celery)
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: farmaerp-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: farmaerp-redis
+          property: connectionString
+
+  # ---------------- Celery Worker (requiere plan de pago) ----------------
+  - type: worker
+    name: farmaerp-worker
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: "celery -A config worker --loglevel=info --concurrency=2"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: farmaerp-api
+          envVarKey: SECRET_KEY
+      - key: DB_ENGINE
+        value: django.db.backends.postgresql
+      - key: DB_HOST
+        fromDatabase:
+          name: farmaerp-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: farmaerp-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: farmaerp-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: farmaerp-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: farmaerp-db
+          property: password
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: farmaerp-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: farmaerp-redis
+          property: connectionString
+
+  # ---------------- Celery Beat (scheduler, requiere plan de pago) ----------------
+  - type: worker
+    name: farmaerp-beat
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: "celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: farmaerp-api
+          envVarKey: SECRET_KEY
+      - key: DB_ENGINE
+        value: django.db.backends.postgresql
+      - key: DB_HOST
+        fromDatabase:
+          name: farmaerp-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: farmaerp-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: farmaerp-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: farmaerp-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: farmaerp-db
+          property: password
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: farmaerp-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: farmaerp-redis
+          property: connectionString
+
+  # ---------------- Frontend web (React + Vite, Static Site) ----------------
+  - type: web
+    name: farmaerp-web
+    runtime: static
+    buildCommand: "cd frontend && npm ci && npm run build"
+    staticPublishPath: ./frontend/dist
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: VITE_API_URL
+        value: https://farmaerp-api.onrender.com/api/v1
+    routes:
+      # SPA: cualquier ruta cae en index.html (React Router)
+      - type: rewrite
+        source: /*
+        destination: /index.html

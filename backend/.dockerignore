@@ -1,0 +1,31 @@
+# Entornos y dependencias
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Configuración local y secretos
+.env
+.env.*
+!.env.example
+
+# Datos locales / artefactos
+*.sqlite3
+db.sqlite3
+staticfiles/
+media/
+logs/
+*.log
+
+# Git e IDE
+.git/
+.gitignore
+.idea/
+.vscode/
+*.swp
+
+# Documentación que no afecta la imagen
+*.md

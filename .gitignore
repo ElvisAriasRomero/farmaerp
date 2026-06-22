@@ -1,0 +1,46 @@
+# ===== Python / Django =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+*.sqlite3
+db.sqlite3
+backend/staticfiles/
+backend/media/
+backend/logs/
+*.log
+
+# ===== Secretos / entorno =====
+.env
+.env.*
+!.env.example
+!backend/.env.example
+!backend/.env.production.example
+
+# ===== Node / Frontend / Mobile =====
+node_modules/
+frontend/dist/
+frontend/.vite/
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+
+# Archivos temporales de Vite
+frontend/vite.config.js.timestamp-*
+
+# ===== ML (modelos entrenados pesados) =====
+backend/ml/models/*.pkl
+backend/ml/models/*.joblib
+backend/ml/models/*.json
+
+# ===== OS / IDE =====
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Archivos de bloqueo temporales de Office
+~$*
