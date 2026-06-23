@@ -10,7 +10,7 @@ class DetalleCompraSerializer(serializers.ModelSerializer):
         fields = (
             "id_detalle_compra", "producto", "producto_nombre",
             "unidades_por_paquete", "cantidad", "precio_unitario",
-            "precio_venta", "subtotal",
+            "precio_venta", "fecha_vencimiento", "numero_lote", "subtotal",
         )
         read_only_fields = ("subtotal",)
 

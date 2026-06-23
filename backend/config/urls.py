@@ -28,7 +28,7 @@ from apps.productos.views import (
     CategoriaViewSet, ProductoViewSet,
     TiendaProductosView, TiendaCategoriasView,
 )
-from apps.inventario.views import InventarioViewSet
+from apps.inventario.views import InventarioViewSet, LoteViewSet
 # Compras
 from apps.compras.views import CompraViewSet, DetalleCompraViewSet
 # Carrito
@@ -58,6 +58,7 @@ router.register("productos/productos", ProductoViewSet, basename="producto")
 
 # Inventario
 router.register("inventario/inventario", InventarioViewSet, basename="inventario")
+router.register("inventario/lotes", LoteViewSet, basename="lote")
 
 # Compras
 router.register("compras/compras", CompraViewSet, basename="compra")

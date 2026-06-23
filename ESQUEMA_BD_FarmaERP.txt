@@ -1,0 +1,336 @@
+-- ============================================================
+--  ESQUEMA DE BASE DE DATOS — FarmaERP (PostgreSQL)
+--  Sistema ERP de farmacia: catálogo, inventario por lotes (FEFO),
+--  compras, ventas, facturación, caja, auditoría y predicción.
+-- ============================================================
+
+-- ----------------------------------------------------------------
+--  Usuarios y roles
+-- ----------------------------------------------------------------
+CREATE TABLE rol (
+    id_rol               SERIAL PRIMARY KEY,
+    nombre_rol           VARCHAR(100) NOT NULL UNIQUE,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE usuario (
+    id_usuario           SERIAL PRIMARY KEY,
+    password             VARCHAR(128) NOT NULL,
+    last_login           TIMESTAMPTZ,
+    is_superuser         BOOLEAN      NOT NULL DEFAULT FALSE,
+    email                VARCHAR(254) NOT NULL UNIQUE,
+    tipo                 VARCHAR(10)  NOT NULL CHECK (tipo IN ('cliente','empleado')),
+    is_staff             BOOLEAN      NOT NULL DEFAULT FALSE,
+    is_active            BOOLEAN      NOT NULL DEFAULT TRUE,
+    date_joined          TIMESTAMPTZ  NOT NULL,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE cliente (
+    id_cliente           SERIAL PRIMARY KEY,
+    id_usuario           INTEGER NOT NULL UNIQUE REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    nombre               VARCHAR(150) NOT NULL,
+    telefono             VARCHAR(20),
+    direccion            TEXT,
+    estado               VARCHAR(10)  NOT NULL DEFAULT 'activo' CHECK (estado IN ('activo','inactivo')),
+    fecha_registro       TIMESTAMPTZ  NOT NULL,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE empleado (
+    id_empleado          SERIAL PRIMARY KEY,
+    id_usuario           INTEGER NOT NULL UNIQUE REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    nombre               VARCHAR(150) NOT NULL,
+    telefono             VARCHAR(20),
+    direccion            TEXT,
+    fecha_nacimiento     DATE,
+    fecha_contratacion   DATE NOT NULL,
+    salario              NUMERIC(10,2),
+    id_rol               INTEGER NOT NULL REFERENCES rol(id_rol),
+    estado               VARCHAR(10)  NOT NULL DEFAULT 'activo' CHECK (estado IN ('activo','vacaciones')),
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE proveedor (
+    id_proveedor         SERIAL PRIMARY KEY,
+    nombre               VARCHAR(150) NOT NULL,
+    email                VARCHAR(120),
+    telefono             VARCHAR(20),
+    direccion            TEXT,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+-- ----------------------------------------------------------------
+--  Catálogo e inventario (con lotes / FEFO)
+-- ----------------------------------------------------------------
+CREATE TABLE categoria (
+    id_categoria         SERIAL PRIMARY KEY,
+    nombre               VARCHAR(100) NOT NULL UNIQUE,
+    descripcion          TEXT,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE producto (
+    id_producto          SERIAL PRIMARY KEY,
+    nombre               VARCHAR(200) NOT NULL,
+    foto                 VARCHAR(500),
+    codigo_barras        VARCHAR(100) UNIQUE,
+    precio_compra        NUMERIC(10,2),
+    precio_venta         NUMERIC(10,2),
+    fecha_vencimiento    DATE,                 -- automática: la fija el lote vigente (FEFO)
+    unidad_medida        VARCHAR(50),
+    unidades_por_empaque INTEGER NOT NULL DEFAULT 1 CHECK (unidades_por_empaque >= 0),
+    id_categoria         INTEGER NOT NULL REFERENCES categoria(id_categoria),
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE inventario (
+    id_inventario        SERIAL PRIMARY KEY,
+    id_producto          INTEGER NOT NULL UNIQUE REFERENCES producto(id_producto) ON DELETE CASCADE,
+    stock_actual         INTEGER NOT NULL DEFAULT 0,
+    stock_minimo         INTEGER NOT NULL DEFAULT 10,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE lote (
+    id_lote              SERIAL PRIMARY KEY,
+    id_producto          INTEGER NOT NULL REFERENCES producto(id_producto) ON DELETE CASCADE,
+    numero_lote          VARCHAR(50),
+    cantidad             INTEGER NOT NULL DEFAULT 0,   -- unidades base restantes
+    fecha_vencimiento    DATE,
+    fecha_ingreso        DATE NOT NULL,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+-- ----------------------------------------------------------------
+--  Compras
+-- ----------------------------------------------------------------
+CREATE TABLE compra (
+    id_compra            SERIAL PRIMARY KEY,
+    id_proveedor         INTEGER NOT NULL REFERENCES proveedor(id_proveedor),
+    fecha_pedido         DATE NOT NULL,
+    fecha_recepcion      DATE,
+    total                NUMERIC(12,2),
+    estado               VARCHAR(12) NOT NULL DEFAULT 'pendiente'
+                          CHECK (estado IN ('pendiente','completada','cancelada')),
+    id_empleado          INTEGER NOT NULL REFERENCES empleado(id_empleado),
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE detalle_compra (
+    id_detalle_compra    SERIAL PRIMARY KEY,
+    id_compra            INTEGER NOT NULL REFERENCES compra(id_compra) ON DELETE CASCADE,
+    id_producto          INTEGER NOT NULL REFERENCES producto(id_producto),
+    unidades_por_paquete INTEGER NOT NULL DEFAULT 1 CHECK (unidades_por_paquete >= 0),
+    cantidad             INTEGER NOT NULL,
+    precio_unitario      NUMERIC(10,2) NOT NULL,
+    precio_venta         NUMERIC(10,2),
+    fecha_vencimiento    DATE,                 -- fecha del lote que ingresa
+    numero_lote          VARCHAR(50),          -- número del lote que ingresa
+    subtotal             NUMERIC(12,2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL
+);
+
+-- ----------------------------------------------------------------
+--  Carrito (tienda en línea)
+-- ----------------------------------------------------------------
+CREATE TABLE carrito (
+    id_carrito           SERIAL PRIMARY KEY,
+    id_cliente           INTEGER NOT NULL REFERENCES cliente(id_cliente),
+    estado               VARCHAR(20) NOT NULL DEFAULT 'abandonado'
+                          CHECK (estado IN ('abandonado','convertido_venta')),
+    total_temporal       NUMERIC(12,2) NOT NULL DEFAULT 0,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE detalle_carrito (
+    id_detalle_carrito   SERIAL PRIMARY KEY,
+    id_carrito           INTEGER NOT NULL REFERENCES carrito(id_carrito) ON DELETE CASCADE,
+    id_producto          INTEGER NOT NULL REFERENCES producto(id_producto),
+    cantidad             INTEGER NOT NULL,
+    precio_unitario      NUMERIC(10,2) NOT NULL,
+    subtotal             NUMERIC(12,2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+-- ----------------------------------------------------------------
+--  Ventas
+-- ----------------------------------------------------------------
+CREATE TABLE venta (
+    id_venta             SERIAL PRIMARY KEY,
+    id_cliente           INTEGER REFERENCES cliente(id_cliente),
+    id_carrito           INTEGER REFERENCES carrito(id_carrito) ON DELETE SET NULL,
+    id_empleado          INTEGER REFERENCES empleado(id_empleado),
+    fecha_venta          TIMESTAMPTZ  NOT NULL,
+    total                NUMERIC(12,2) NOT NULL,
+    estado               VARCHAR(12) NOT NULL DEFAULT 'pendiente'
+                          CHECK (estado IN ('pendiente','reservada','pagada','entregada','completada','cancelada')),
+    con_factura          BOOLEAN     NOT NULL DEFAULT FALSE,
+    origen               VARCHAR(10) NOT NULL DEFAULT 'mostrador'
+                          CHECK (origen IN ('mostrador','tienda')),
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE detalle_venta (
+    id_detalle_venta     SERIAL PRIMARY KEY,
+    id_venta             INTEGER NOT NULL REFERENCES venta(id_venta) ON DELETE CASCADE,
+    id_producto          INTEGER NOT NULL REFERENCES producto(id_producto),
+    presentacion         VARCHAR(10) NOT NULL DEFAULT 'unidad'
+                          CHECK (presentacion IN ('paquete','unidad')),
+    cantidad             INTEGER NOT NULL,
+    precio_unitario      NUMERIC(10,2) NOT NULL,
+    subtotal             NUMERIC(12,2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL
+);
+
+-- ----------------------------------------------------------------
+--  Facturación y pagos
+-- ----------------------------------------------------------------
+CREATE TABLE factura (
+    id_factura           SERIAL PRIMARY KEY,
+    id_venta             INTEGER NOT NULL UNIQUE REFERENCES venta(id_venta),
+    numero_factura       VARCHAR(50) NOT NULL UNIQUE,
+    fecha_emision        DATE NOT NULL,
+    total                NUMERIC(12,2) NOT NULL,
+    estado               VARCHAR(10) NOT NULL DEFAULT 'emitida'
+                          CHECK (estado IN ('emitida','anulada','pagada')),
+    nit_ci               VARCHAR(30)  NOT NULL DEFAULT '0',
+    razon_social         VARCHAR(200) NOT NULL DEFAULT 'S/N',
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE pago (
+    id_pago              SERIAL PRIMARY KEY,
+    id_venta             INTEGER REFERENCES venta(id_venta),
+    id_factura           INTEGER REFERENCES factura(id_factura),
+    fecha_pago           TIMESTAMPTZ  NOT NULL,
+    monto                NUMERIC(12,2) NOT NULL,
+    metodo_pago          VARCHAR(10) NOT NULL CHECK (metodo_pago IN ('efectivo','tarjeta','qr')),
+    estado               VARCHAR(10) NOT NULL DEFAULT 'pendiente'
+                          CHECK (estado IN ('pendiente','completado','rechazado')),
+    referencia           VARCHAR(100),
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+-- ----------------------------------------------------------------
+--  Caja
+-- ----------------------------------------------------------------
+CREATE TABLE caja (
+    id_caja              SERIAL PRIMARY KEY,
+    id_empleado          INTEGER NOT NULL REFERENCES empleado(id_empleado),
+    fecha_apertura       TIMESTAMPTZ  NOT NULL,
+    fecha_cierre         TIMESTAMPTZ,
+    saldo_inicial        NUMERIC(12,2) NOT NULL,
+    saldo_final          NUMERIC(12,2),
+    total_entradas       NUMERIC(12,2) NOT NULL DEFAULT 0,
+    total_salidas        NUMERIC(12,2) NOT NULL DEFAULT 0,
+    estado               VARCHAR(7) NOT NULL DEFAULT 'abierta'
+                          CHECK (estado IN ('abierta','cerrada')),
+    observaciones        TEXT,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL
+);
+
+-- ----------------------------------------------------------------
+--  Auditoría y reportes
+-- ----------------------------------------------------------------
+CREATE TABLE bitacora_auditoria (
+    id_bitacora          SERIAL PRIMARY KEY,
+    id_empleado          INTEGER REFERENCES empleado(id_empleado),
+    tabla_afectada       VARCHAR(100) NOT NULL,
+    tipo_operacion       VARCHAR(6) NOT NULL CHECK (tipo_operacion IN ('INSERT','UPDATE','DELETE')),
+    fecha_operacion      DATE NOT NULL,
+    hora_operacion       TIME NOT NULL,
+    datos_anteriores     JSONB,
+    datos_nuevos         JSONB,
+    ip_origen            INET,
+    fecha_creacion       TIMESTAMPTZ  NOT NULL
+);
+
+CREATE TABLE reporte_generado (
+    id_reporte           SERIAL PRIMARY KEY,
+    tipo                 VARCHAR(12) NOT NULL
+                          CHECK (tipo IN ('ventas','compra','inventario','auditoria','prediccion')),
+    fecha_generacion     TIMESTAMPTZ  NOT NULL,
+    fecha_inicio         DATE,
+    fecha_fin            DATE,
+    id_empleado          INTEGER NOT NULL REFERENCES empleado(id_empleado),
+    formato              VARCHAR(5) NOT NULL CHECK (formato IN ('PDF','Excel')),
+    ruta_archivo         VARCHAR(255),
+    estado               VARCHAR(50) NOT NULL DEFAULT 'generado',
+    fecha_creacion       TIMESTAMPTZ  NOT NULL
+);
+
+-- ----------------------------------------------------------------
+--  Predicción de demanda (Machine Learning)
+-- ----------------------------------------------------------------
+CREATE TABLE demandas_historicas (
+    id_demanda           SERIAL PRIMARY KEY,
+    id_producto          INTEGER NOT NULL REFERENCES producto(id_producto) ON DELETE CASCADE,
+    fecha                DATE NOT NULL,
+    cantidad_vendida     INTEGER NOT NULL,
+    precio_promedio      NUMERIC(10,2),
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    CONSTRAINT uq_demanda_producto_fecha UNIQUE (id_producto, fecha)
+);
+
+CREATE TABLE datos_prediccion (
+    id_prediccion        SERIAL PRIMARY KEY,
+    id_producto          INTEGER NOT NULL REFERENCES producto(id_producto) ON DELETE CASCADE,
+    demanda_predicha     INTEGER NOT NULL,
+    confianza            NUMERIC(5,2),
+    metodo               VARCHAR(12) NOT NULL DEFAULT 'sin_datos'
+                          CHECK (metodo IN ('prophet','media_movil','sin_datos')),
+    fecha_prediccion     DATE NOT NULL,
+    periodo              VARCHAR(12) NOT NULL
+                          CHECK (periodo IN ('diario','semanal','mensual','trimestral','anual')),
+    fecha_creacion       TIMESTAMPTZ  NOT NULL,
+    fecha_actualizacion  TIMESTAMPTZ  NOT NULL,
+    CONSTRAINT uq_prediccion UNIQUE (id_producto, periodo, fecha_prediccion)
+);
+
+CREATE TABLE compra_sugerida (
+    id_sugerencia        SERIAL PRIMARY KEY,
+    id_producto          INTEGER NOT NULL REFERENCES producto(id_producto) ON DELETE CASCADE,
+    cantidad_sugerida    INTEGER NOT NULL,
+    motivo               VARCHAR(20) NOT NULL CHECK (motivo IN ('bajo_stock','prediccion_demanda')),
+    estado               VARCHAR(12) NOT NULL DEFAULT 'pendiente'
+                          CHECK (estado IN ('pendiente','atendida','descartada')),
+    fecha_creacion       TIMESTAMPTZ  NOT NULL
+);
+
+-- ============================================================
+--  ÍNDICES RECOMENDADOS (sobre llaves foráneas y búsquedas)
+-- ============================================================
+CREATE INDEX idx_producto_categoria      ON producto(id_categoria);
+CREATE INDEX idx_lote_producto           ON lote(id_producto);
+CREATE INDEX idx_lote_vencimiento        ON lote(fecha_vencimiento);
+CREATE INDEX idx_detcompra_compra        ON detalle_compra(id_compra);
+CREATE INDEX idx_detcompra_producto      ON detalle_compra(id_producto);
+CREATE INDEX idx_detventa_venta          ON detalle_venta(id_venta);
+CREATE INDEX idx_detventa_producto       ON detalle_venta(id_producto);
+CREATE INDEX idx_venta_cliente           ON venta(id_cliente);
+CREATE INDEX idx_venta_empleado          ON venta(id_empleado);
+CREATE INDEX idx_pago_venta              ON pago(id_venta);
+CREATE INDEX idx_pago_factura            ON pago(id_factura);
+CREATE INDEX idx_compra_proveedor        ON compra(id_proveedor);
+CREATE INDEX idx_detcarrito_carrito      ON detalle_carrito(id_carrito);
+
+-- ============================================================
+--  FIN DEL ESQUEMA — 23 tablas
+-- ============================================================

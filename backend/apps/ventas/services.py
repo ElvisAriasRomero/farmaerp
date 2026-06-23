@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from apps.inventario.models import Inventario
+from apps.inventario.services import consumir_stock_fefo, devolver_stock_fefo
 from .models import Venta, DetalleVenta
 
 
@@ -49,6 +50,9 @@ def crear_venta(datos_venta, detalles):
         detalle = DetalleVenta.objects.create(venta=venta, **det)
         inventario.stock_actual -= unidades
         inventario.save(update_fields=["stock_actual"])
+        # Consume de los lotes en orden FEFO y recalcula la fecha de
+        # vencimiento del producto (salta al siguiente lote si se agota).
+        consumir_stock_fefo(producto, unidades)
         total += detalle.cantidad * detalle.precio_unitario
     venta.total = total
     venta.save(update_fields=["total"])
@@ -67,6 +71,7 @@ def cancelar_venta(venta):
         )
         inventario.stock_actual += det.cantidad * factor
         inventario.save(update_fields=["stock_actual"])
+        devolver_stock_fefo(det.producto, det.cantidad * factor)
     venta.estado = "cancelada"
     venta.save(update_fields=["estado"])
     return venta

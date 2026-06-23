@@ -22,6 +22,7 @@ export const NAV = [
     items: [
       { to: "/panel/productos", icon: "pill", label: "Productos", roles: STAFF },
       { to: "/panel/categorias", icon: "layers", label: "Categorías", roles: STAFF },
+      { to: "/panel/lotes", icon: "box", label: "Lotes", roles: STAFF },
     ],
   },
   {

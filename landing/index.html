@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InovaSoft — Desarrollo de Software a Medida</title>
+<meta name="description" content="InovaSoft: desarrollo de software a medida. Sistemas web, aplicaciones móviles, ERP, APIs e inteligencia artificial." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --orange:#F4511E;
+    --orange-2:#FF7A18;
+    --red:#E53935;
+    --ink:#16181D;
+    --ink-2:#2A2D35;
+    --muted:#6B7280;
+    --bg:#FFFFFF;
+    --bg-soft:#F7F8FA;
+    --border:#E8EAEE;
+    --grad:linear-gradient(135deg,#FF7A18 0%,#F4511E 55%,#E53935 100%);
+    --shadow:0 18px 50px rgba(20,24,31,.10);
+    --shadow-sm:0 8px 24px rgba(20,24,31,.07);
+    --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.brand{font-family:'Poppins',sans-serif;line-height:1.15}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+  .grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* ---------- HEADER ---------- */
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:72px}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo svg{height:40px;width:auto}
+  .logo .name{font-family:'Poppins';font-weight:800;font-size:1.35rem;letter-spacing:-.5px}
+  .logo .name b{color:var(--orange)}
+  .menu{display:flex;gap:30px;align-items:center}
+  .menu a{font-weight:500;color:var(--ink-2);font-size:.95rem;transition:color .2s}
+  .menu a:hover{color:var(--orange)}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-weight:600;border-radius:999px;padding:12px 22px;font-size:.95rem;transition:transform .15s, box-shadow .2s, background .2s;cursor:pointer;border:none}
+  .btn-primary{background:var(--grad);color:#fff;box-shadow:0 10px 24px rgba(244,81,30,.35)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(244,81,30,.45)}
+  .btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--border)}
+  .btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
+  .btn-wa{background:#25D366;color:#fff;box-shadow:0 10px 24px rgba(37,211,102,.32)}
+  .btn-wa:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(37,211,102,.45)}
+  .nav .btn{padding:10px 20px}
+  .burger{display:none;background:none;border:none;cursor:pointer;font-size:1.6rem;color:var(--ink)}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative;overflow:hidden;padding:90px 0 80px;background:
+     radial-gradient(900px 500px at 85% -10%,rgba(244,81,30,.10),transparent 60%),
+     radial-gradient(700px 500px at -5% 110%,rgba(229,57,53,.08),transparent 60%)}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);color:var(--orange);font-weight:600;font-size:.8rem;letter-spacing:.5px;text-transform:uppercase;padding:7px 14px;border-radius:999px;box-shadow:var(--shadow-sm)}
+  .hero h1{font-size:clamp(2.3rem,5vw,3.6rem);font-weight:800;letter-spacing:-1.5px;margin:18px 0 14px}
+  .hero p.lead{font-size:1.18rem;color:var(--muted);max-width:540px}
+  .hero-cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:30px}
+  .hero-stats{display:flex;gap:34px;margin-top:42px}
+  .hero-stats .n{font-family:'Poppins';font-weight:800;font-size:1.8rem}
+  .hero-stats .l{font-size:.85rem;color:var(--muted)}
+  /* hero art */
+  .hero-art{position:relative;display:flex;justify-content:center}
+  .hero-card{background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);padding:26px;width:100%;max-width:420px}
+  .code-dots{display:flex;gap:7px;margin-bottom:16px}
+  .code-dots span{width:12px;height:12px;border-radius:50%}
+  .code-dots span:nth-child(1){background:#ff5f56}.code-dots span:nth-child(2){background:#ffbd2e}.code-dots span:nth-child(3){background:#27c93f}
+  pre.code{font-family:'JetBrains Mono','Courier New',monospace;font-size:.82rem;line-height:1.7;color:#2A2D35;background:var(--bg-soft);border-radius:12px;padding:16px;overflow:auto}
+  .code .k{color:#E53935}.code .s{color:#F4511E}.code .c{color:#9aa0aa}.code .f{color:#1565C0}
+  .float-badge{position:absolute;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:12px 16px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:.9rem}
+  .fb1{top:-18px;right:-10px}.fb2{bottom:-18px;left:-10px}
+  .float-badge .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#fff;font-size:1.1rem}
+
+  /* ---------- SECTION ---------- */
+  section{padding:84px 0}
+  .sec-head{text-align:center;max-width:680px;margin:0 auto 52px}
+  .sec-head .eyebrow{margin-bottom:14px}
+  .sec-head h2{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;letter-spacing:-1px}
+  .sec-head p{color:var(--muted);font-size:1.08rem;margin-top:12px}
+  .bg-soft{background:var(--bg-soft)}
+
+  /* services */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:30px;transition:transform .2s, box-shadow .25s, border-color .25s}
+  .card:hover{transform:translateY(-6px);box-shadow:var(--shadow);border-color:transparent}
+  .card .ic{width:54px;height:54px;border-radius:14px;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:1.5rem;margin-bottom:18px;box-shadow:0 8px 20px rgba(244,81,30,.3)}
+  .card h3{font-size:1.18rem;font-weight:700;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:.96rem}
+
+  /* project showcase */
+  .project{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+  .project .badge{display:inline-block;background:rgba(244,81,30,.1);color:var(--orange);font-weight:700;font-size:.8rem;padding:6px 14px;border-radius:999px;letter-spacing:.5px}
+  .project h3{font-size:2rem;font-weight:800;margin:16px 0 12px;letter-spacing:-.5px}
+  .project p{color:var(--muted);margin-bottom:18px}
+  .tags{display:flex;flex-wrap:wrap;gap:9px}
+  .tag{background:#fff;border:1px solid var(--border);border-radius:999px;padding:7px 14px;font-size:.85rem;font-weight:600;color:var(--ink-2)}
+  .mockup{background:var(--grad);border-radius:24px;padding:34px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .mockup::after{content:"";position:absolute;inset:0;background:radial-gradient(400px 200px at 80% 0,rgba(255,255,255,.25),transparent)}
+  .screen{background:#fff;border-radius:14px;padding:18px;position:relative;z-index:1}
+  .screen .row{height:10px;border-radius:6px;background:#eef0f3;margin:9px 0}
+  .screen .row.w70{width:70%}.screen .row.w40{width:40%;background:var(--orange);opacity:.6}
+  .kpis{display:flex;gap:10px;margin:14px 0}
+  .kpi{flex:1;background:var(--bg-soft);border-radius:10px;padding:12px}
+  .kpi .b{font-family:'Poppins';font-weight:800;font-size:1.1rem}
+  .kpi .s{font-size:.7rem;color:var(--muted)}
+
+  /* team */
+  .team{display:grid;grid-template-columns:repeat(2,1fr);gap:28px;max-width:840px;margin:0 auto}
+  .member{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:32px;text-align:center;transition:transform .2s, box-shadow .25s}
+  .member:hover{transform:translateY(-6px);box-shadow:var(--shadow)}
+  .avatar{width:96px;height:96px;border-radius:50%;margin:0 auto 18px;background:var(--grad);display:grid;place-items:center;color:#fff;font-family:'Poppins';font-weight:800;font-size:2rem;box-shadow:0 10px 24px rgba(244,81,30,.3)}
+  .member h3{font-size:1.25rem;font-weight:700}
+  .member .role{color:var(--orange);font-weight:600;font-size:.9rem;margin-bottom:6px}
+  .member .phone{color:var(--muted);font-size:.92rem;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:7px}
+  .member .btn{width:100%;justify-content:center}
+
+  /* contact */
+  .contact-box{background:var(--ink);border-radius:28px;padding:60px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
+  .contact-box::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 300px at 50% -20%,rgba(244,81,30,.35),transparent 60%)}
+  .contact-box>*{position:relative;z-index:1}
+  .contact-box h2{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;letter-spacing:-1px}
+  .contact-box p{color:#B8BDC7;margin:14px auto 30px;max-width:520px}
+  .contact-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+  /* footer */
+  footer{background:var(--bg-soft);border-top:1px solid var(--border);padding:46px 0 30px}
+  .foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+  .foot .muted{color:var(--muted);font-size:.9rem}
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  /* responsive */
+  @media(max-width:880px){
+    .hero-grid,.project{grid-template-columns:1fr;gap:36px}
+    .cards{grid-template-columns:1fr 1fr}
+    .menu{display:none}
+    .burger{display:block}
+    .menu.open{display:flex;position:absolute;top:72px;left:0;right:0;flex-direction:column;background:#fff;border-bottom:1px solid var(--border);padding:18px 24px;gap:16px}
+  }
+  @media(max-width:560px){
+    .cards,.team{grid-template-columns:1fr}
+    .hero-stats{gap:22px}
+    section{padding:60px 0}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="wrap nav">
+    <a href="#inicio" class="logo" aria-label="InovaSoft">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FF7A18"/><stop offset="1" stop-color="#E53935"/>
+          </linearGradient>
+        </defs>
+        <rect x="6" y="6" width="52" height="52" rx="15" fill="#16181D"/>
+        <path d="M24 18v28" stroke="url(#g)" stroke-width="7" stroke-linecap="round"/>
+        <path d="M44 20c-8 0-10 6-4 9s4 9-4 9" stroke="url(#g)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="40" y="14" width="5" height="5" rx="1.2" fill="#FF7A18"/>
+        <rect x="47" y="17" width="4" height="4" rx="1" fill="#E53935"/>
+      </svg>
+      <span class="name">Inova<b>Soft</b></span>
+    </a>
+    <nav class="menu" id="menu">
+      <a href="#servicios">Servicios</a>
+      <a href="#proyecto">Proyectos</a>
+      <a href="#equipo">Equipo</a>
+      <a href="#contacto" class="btn btn-primary">Contáctanos</a>
+    </nav>
+    <button class="burger" id="burger" aria-label="Menú">☰</button>
+  </div>
+</header>
+
+<!-- ===== HERO ===== -->
+<main id="inicio">
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="reveal">
+      <span class="eyebrow">⚡ Desarrollo de software a medida</span>
+      <h1>Convertimos tus ideas en <span class="grad-text">software que funciona</span>.</h1>
+      <p class="lead">En InovaSoft diseñamos y construimos sistemas web, aplicaciones móviles y soluciones inteligentes hechas exactamente para tu negocio.</p>
+      <div class="hero-cta">
+        <a href="#contacto" class="btn btn-primary">Iniciar un proyecto →</a>
+        <a href="#servicios" class="btn btn-ghost">Ver servicios</a>
+      </div>
+      <div class="hero-stats">
+        <div><div class="n grad-text">100%</div><div class="l">A medida</div></div>
+        <div><div class="n grad-text">Web + Móvil</div><div class="l">Multiplataforma</div></div>
+        <div><div class="n grad-text">24/7</div><div class="l">En la nube</div></div>
+      </div>
+    </div>
+    <div class="hero-art reveal">
+      <div class="hero-card">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <pre class="code"><span class="c">// InovaSoft — soluciones a medida</span>
+<span class="k">const</span> proyecto = <span class="f">InovaSoft</span>.build({
+  web:     <span class="s">"React + Django"</span>,
+  movil:   <span class="s">"React Native"</span>,
+  nube:    <span class="s">"Docker · Render"</span>,
+  ia:      <span class="s">"Machine Learning"</span>,
+});
+
+proyecto.<span class="f">deploy</span>(); <span class="c">// 🚀 listo</span></pre>
+      </div>
+      <div class="float-badge fb1"><span class="ic" style="background:var(--grad)">✓</span> Código limpio</div>
+      <div class="float-badge fb2"><span class="ic" style="background:#25D366">✦</span> Soporte directo</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SERVICIOS ===== -->
+<section id="servicios" class="bg-soft">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Qué hacemos</span>
+      <h2>Servicios que impulsan tu negocio</h2>
+      <p>Cubrimos todo el ciclo: desde la idea y el diseño hasta el despliegue y el soporte.</p>
+    </div>
+    <div class="cards">
+      <div class="card reveal"><div class="ic">🌐</div><h3>Aplicaciones Web</h3><p>Sistemas y plataformas web modernas, rápidas y responsivas con React y Django REST.</p></div>
+      <div class="card reveal"><div class="ic">📱</div><h3>Apps Móviles</h3><p>Aplicaciones nativas para Android e iOS con React Native, conectadas a tus servicios.</p></div>
+      <div class="card reveal"><div class="ic">🏢</div><h3>Sistemas ERP a Medida</h3><p>Gestión de ventas, inventario, compras, caja y reportes adaptada a tu empresa.</p></div>
+      <div class="card reveal"><div class="ic">🔌</div><h3>APIs y Backend</h3><p>Servicios robustos y seguros con autenticación JWT, integraciones y buenas prácticas.</p></div>
+      <div class="card reveal"><div class="ic">🤖</div><h3>IA y Analítica</h3><p>Predicción de demanda, dashboards y machine learning para decisiones basadas en datos.</p></div>
+      <div class="card reveal"><div class="ic">☁️</div><h3>Despliegue en la Nube</h3><p>Contenedores Docker, CI/CD y publicación en la nube para que tu sistema viva online 24/7.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PROYECTO DESTACADO ===== -->
+<section id="proyecto">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Proyecto destacado</span>
+      <h2>Lo que somos capaces de construir</h2>
+    </div>
+    <div class="project">
+      <div class="reveal">
+        <span class="badge">FarmaERP</span>
+        <h3>ERP completo para farmacias</h3>
+        <p>Sistema integral con tienda en línea, panel administrativo, app móvil para clientes y predicción de demanda con inteligencia artificial. Un ejemplo real de software a medida construido de extremo a extremo.</p>
+        <div class="tags">
+          <span class="tag">React</span><span class="tag">Django REST</span><span class="tag">React Native</span>
+          <span class="tag">PostgreSQL</span><span class="tag">Celery + Redis</span><span class="tag">Prophet / ML</span>
+          <span class="tag">Docker</span><span class="tag">Cloud</span>
+        </div>
+      </div>
+      <div class="mockup reveal">
+        <div class="screen">
+          <div class="row w40"></div>
+          <div class="kpis">
+            <div class="kpi"><div class="b grad-text">Bs 422</div><div class="s">Ingresos</div></div>
+            <div class="kpi"><div class="b grad-text">46</div><div class="s">Ventas</div></div>
+            <div class="kpi"><div class="b grad-text">+12%</div><div class="s">Demanda</div></div>
+          </div>
+          <div class="row w70"></div><div class="row"></div><div class="row w70"></div><div class="row"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== EQUIPO ===== -->
+<section id="equipo" class="bg-soft">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Nuestro equipo</span>
+      <h2>Hablemos directamente con quien desarrolla</h2>
+      <p>Sin intermediarios. Contáctanos por WhatsApp y cuéntanos tu idea.</p>
+    </div>
+    <div class="team">
+      <div class="member reveal">
+        <div class="avatar">EA</div>
+        <h3>Elvis Arias Romero</h3>
+        <div class="role">Desarrollador Full-Stack</div>
+        <div class="phone">📞 +591 71050261</div>
+        <a class="btn btn-wa" href="https://wa.me/59171050261?text=Hola%20Elvis,%20vi%20la%20web%20de%20InovaSoft%20y%20me%20interesa%20un%20proyecto." target="_blank" rel="noopener">
+          <span>🟢</span> Escribir por WhatsApp
+        </a>
+      </div>
+      <div class="member reveal">
+        <div class="avatar">HA</div>
+        <h3>Harold Jhayson Apaza Monasterio</h3>
+        <div class="role">Desarrollador Full-Stack</div>
+        <div class="phone">📞 +591 60933397</div>
+        <a class="btn btn-wa" href="https://wa.me/59160933397?text=Hola%20Harold,%20vi%20la%20web%20de%20InovaSoft%20y%20me%20interesa%20un%20proyecto." target="_blank" rel="noopener">
+          <span>🟢</span> Escribir por WhatsApp
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CONTACTO ===== -->
+<section id="contacto">
+  <div class="wrap">
+    <div class="contact-box reveal">
+      <span class="eyebrow">Contáctanos</span>
+      <h2>¿Tienes una idea? La hacemos realidad.</h2>
+      <p>Escríbenos por WhatsApp y conversemos sobre tu proyecto. Respondemos rápido y sin compromiso.</p>
+      <div class="contact-cta">
+        <a class="btn btn-wa" href="https://wa.me/59171050261?text=Hola%20InovaSoft,%20quiero%20cotizar%20un%20proyecto." target="_blank" rel="noopener"><span>🟢</span> WhatsApp Elvis</a>
+        <a class="btn btn-wa" href="https://wa.me/59160933397?text=Hola%20InovaSoft,%20quiero%20cotizar%20un%20proyecto." target="_blank" rel="noopener"><span>🟢</span> WhatsApp Harold</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="wrap foot">
+    <div class="logo">
+      <span class="name">Inova<b>Soft</b></span>
+    </div>
+    <div class="muted">Desarrollo de software a medida · Santa Cruz, Bolivia</div>
+    <div class="muted">© <span id="year"></span> InovaSoft. Todos los derechos reservados.</div>
+  </div>
+</footer>
+
+<script>
+  // año dinámico
+  document.getElementById('year').textContent = new Date().getFullYear();
+  // menú móvil
+  const burger=document.getElementById('burger'), menu=document.getElementById('menu');
+  burger.addEventListener('click',()=>menu.classList.toggle('open'));
+  menu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>menu.classList.remove('open')));
+  // animaciones al hacer scroll
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>

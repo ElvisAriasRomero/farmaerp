@@ -24,7 +24,11 @@ class ProductoSerializer(serializers.ModelSerializer):
         model = Producto
         exclude = ("categoria",)
         # El costo NO se escribe a mano: lo fija la recepcion de la compra.
-        read_only_fields = ("precio_compra", "precio_venta", "unidades_por_empaque")
+        # La fecha de vencimiento es automatica: la gestionan los lotes (FEFO).
+        read_only_fields = (
+            "precio_compra", "precio_venta", "unidades_por_empaque",
+            "fecha_vencimiento",
+        )
 
     def validate(self, attrs):
         # El precio de venta no puede ser menor al costo (solo si ya hay costo).

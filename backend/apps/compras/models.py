@@ -68,6 +68,9 @@ class DetalleCompra(models.Model):
     precio_venta = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
     )
+    # Datos del lote que ingresa con esta linea de compra.
+    fecha_vencimiento = models.DateField(null=True, blank=True)
+    numero_lote = models.CharField(max_length=50, null=True, blank=True)
     subtotal = models.GeneratedField(
         expression=F("cantidad") * F("precio_unitario"),
         output_field=models.DecimalField(max_digits=12, decimal_places=2),

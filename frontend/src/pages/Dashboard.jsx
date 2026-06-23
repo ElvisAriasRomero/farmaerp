@@ -44,6 +44,7 @@ export default function Dashboard() {
   }));
   const metodos = data?.ventas_por_metodo || [];
   const alertas = data?.alertas_stock_bajo || [];
+  const vencimientos = data?.alertas_vencimiento || [];
   const caja = data?.caja_actual || {};
   const reservas = data?.reservas_pendientes || [];
   const reservasTotal = data?.reservas_pendientes_total || 0;
@@ -148,8 +149,8 @@ export default function Dashboard() {
                         <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} width={64}
                           tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v)} />
                         <Tooltip content={<IngresosTooltip />} />
-                        <Area type="monotone" dataKey="ingresos" stroke="#7c3aed" strokeWidth={2.2} fill="url(#gIngresos)" />
-                        <Area type="monotone" dataKey="ganancia" stroke="#f59e0b" strokeWidth={2} fill="url(#gGanancia)" />
+                        <Area type="monotone" dataKey="ingresos" stroke="#7c3aed" strokeWidth={2.4} fill="url(#gIngresos)" dot={false} activeDot={{ r: 4 }} />
+                        <Area type="monotone" dataKey="ganancia" stroke="#f59e0b" strokeWidth={2.4} fill="none" dot={false} activeDot={{ r: 4 }} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -233,21 +234,37 @@ export default function Dashboard() {
 
         <div className="card">
           <div className="card__head">
-            <h3>Alertas de stock</h3>
+            <h3>Alertas</h3>
             <Link to="/panel/inventario" className="badge badge--amber badge--plain" style={{ cursor: "pointer" }}>Ver todo</Link>
           </div>
           <div className="card__body" style={{ paddingTop: 6 }}>
             {loading ? <div className="loading-block"><div className="spinner" /></div>
-              : alertas.length === 0 ? (
+              : (alertas.length === 0 && vencimientos.length === 0) ? (
                 <div className="empty" style={{ padding: "30px 10px" }}>
                   <div className="empty__icon" style={{ background: "var(--success-50)", color: "var(--success-600)" }}><Icon name="check" size={24} /></div>
                   <h4>Todo en orden</h4>
-                  <p>No hay productos por debajo del stock mínimo.</p>
+                  <p>Sin stock bajo ni productos por vencer.</p>
                 </div>
               ) : (
                 <div style={{ maxHeight: 280, overflowY: "auto" }}>
+                  {/* Próximos a vencer / vencidos */}
+                  {vencimientos.slice(0, 6).map((v) => (
+                    <div className="alert-row" key={`v-${v.id_producto}`}>
+                      <div className="alert-row__icon" style={{ background: v.vencido ? "var(--danger-50)" : "var(--warning-50)", color: v.vencido ? "var(--danger-600)" : "var(--warning-600)" }}>
+                        <Icon name="alert" size={18} />
+                      </div>
+                      <div className="alert-row__body">
+                        <b>{v.nombre}</b>
+                        <span>Vence {dateShort(v.fecha_vencimiento)} · stock {v.stock_actual}</span>
+                      </div>
+                      <span className={`badge badge--${v.vencido ? "red" : "amber"}`}>
+                        {v.vencido ? "Vencido" : v.dias_restantes === 0 ? "Vence hoy" : `Vence en ${v.dias_restantes} día${v.dias_restantes === 1 ? "" : "s"}`}
+                      </span>
+                    </div>
+                  ))}
+                  {/* Stock bajo */}
                   {alertas.slice(0, 8).map((a) => (
-                    <div className="alert-row" key={a.id_producto}>
+                    <div className="alert-row" key={`s-${a.id_producto}`}>
                       <div className="alert-row__icon"><Icon name="alert" size={18} /></div>
                       <div className="alert-row__body">
                         <b>{a.nombre}</b>

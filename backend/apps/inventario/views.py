@@ -5,8 +5,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.permissions import MatrizPermisos
-from .models import Inventario
-from .serializers import InventarioSerializer
+from .models import Inventario, Lote
+from .serializers import InventarioSerializer, LoteSerializer
 
 
 class InventarioViewSet(AuditoriaMixin, viewsets.ModelViewSet):
@@ -26,3 +26,17 @@ class InventarioViewSet(AuditoriaMixin, viewsets.ModelViewSet):
         if page is not None:
             return self.get_paginated_response(serializer.data)
         return Response(serializer.data)
+
+
+class LoteViewSet(AuditoriaMixin, viewsets.ModelViewSet):
+    """Gestión de lotes por producto (con fecha de vencimiento propia)."""
+    queryset = (
+        Lote.objects.select_related("producto")
+        .all()
+        .order_by("producto_id", "fecha_vencimiento", "id_lote")
+    )
+    serializer_class = LoteSerializer
+    permission_classes = [MatrizPermisos]
+    permisos = {"empleado": "CRU"}
+    filterset_fields = ["producto"]
+    search_fields = ["producto__nombre", "numero_lote"]

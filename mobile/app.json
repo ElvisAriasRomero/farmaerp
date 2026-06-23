@@ -23,7 +23,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1F3864"
       },
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -32,6 +36,14 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.25"
+          }
+        }
+      ],
       [
         "expo-camera",
         {
@@ -44,13 +56,17 @@
           "icon": "./assets/notification-icon.png",
           "color": "#1F3864"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
-      "apiUrl": "http://192.168.1.30:8000/api/v1",
-      "apiUrlWeb": "http://localhost:8000/api/v1",
+      "apiUrl": "https://farmaerp-api.onrender.com/api/v1",
+      "apiUrlWeb": "https://farmaerp-api.onrender.com/api/v1",
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "ea999b7d-273e-472c-a1a2-d5c221ec8abe"
       }
     },
     "experiments": {

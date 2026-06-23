@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.db import transaction
 
 from apps.inventario.models import Inventario
+from apps.inventario.services import registrar_lote
 from .models import Compra, DetalleCompra
 
 
@@ -46,6 +47,15 @@ def recepcionar_compra(compra):
         )
         inventario.stock_actual += unidades
         inventario.save(update_fields=["stock_actual"])
+
+        # Registra el lote que ingresa con esta linea (con su fecha de
+        # vencimiento). Esto recalcula la fecha de vencimiento del producto.
+        registrar_lote(
+            producto,
+            unidades,
+            fecha_vencimiento=det.fecha_vencimiento,
+            numero_lote=det.numero_lote,
+        )
 
         cambios = []
         costo_unidad = (det.precio_unitario / factor).quantize(Decimal("0.01"))

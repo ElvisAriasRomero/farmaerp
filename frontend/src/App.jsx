@@ -10,6 +10,7 @@ import Checkout from "./pages/store/Checkout.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Productos from "./pages/Productos.jsx";
 import Categorias from "./pages/Categorias.jsx";
+import Lotes from "./pages/Lotes.jsx";
 import Inventario from "./pages/Inventario.jsx";
 import Ventas from "./pages/Ventas.jsx";
 import Reservas from "./pages/Reservas.jsx";
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="/panel" element={<Dashboard />} />
         <Route path="/panel/productos" element={<Productos />} />
         <Route path="/panel/categorias" element={<Categorias />} />
+        <Route path="/panel/lotes" element={<Lotes />} />
         <Route path="/panel/inventario" element={<Inventario />} />
         <Route path="/panel/ventas" element={<VentaForm />} />
         <Route path="/panel/ventas/registros" element={<Ventas />} />

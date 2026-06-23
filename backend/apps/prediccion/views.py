@@ -203,6 +203,7 @@ class DashboardView(APIView):
             "ventas_por_dia": analytics.ventas_por_dia(dias),
             "ventas_por_metodo": analytics.ventas_por_metodo(dias),
             "alertas_stock_bajo": analytics.alertas_stock_bajo(),
+            "alertas_vencimiento": analytics.alertas_vencimiento(),
             "caja_actual": caja_data,
             "reservas_pendientes": reservas,
             "reservas_pendientes_total": reservas_qs.count(),

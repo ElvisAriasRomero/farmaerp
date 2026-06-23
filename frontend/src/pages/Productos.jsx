@@ -74,7 +74,7 @@ export default function Productos() {
     { name: "nombre", label: "Nombre del producto", required: true, span: true, placeholder: "Ej. Paracetamol 500mg" },
     { name: "id_categoria", label: "Categoría", type: "select", required: true, options: () => categorias },
     { name: "codigo_barras", label: "Código de barras", placeholder: "7790000000000" },
-    { name: "fecha_vencimiento", label: "Fecha de vencimiento", type: "date" },
+    // La fecha de vencimiento ya no se edita aquí: la gestionan los lotes (FEFO).
     { name: "foto", label: "URL de imagen", span: true, placeholder: "https://…", omitIfEmpty: true },
   ];
 

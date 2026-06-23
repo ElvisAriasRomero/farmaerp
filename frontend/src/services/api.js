@@ -126,6 +126,7 @@ export const endpoints = {
   categorias: resource("productos/categorias"),
   productos: resource("productos/productos"),
   inventario: resource("inventario/inventario"),
+  lotes: resource("inventario/lotes"),
   compras: resource("compras/compras"),
   detalleCompra: resource("compras/detalle"),
   carritos: resource("carrito"),

@@ -7,7 +7,7 @@ import { useToast } from "../context/ToastContext.jsx";
 import { endpoints, parseApiError } from "../services/api.js";
 import { currency } from "../utils/format.js";
 
-const emptyLine = () => ({ producto: "", unidades_por_paquete: 1, cantidad: 1, precio_unitario: "", margen: 30, precio_venta: "" });
+const emptyLine = () => ({ producto: "", unidades_por_paquete: 1, cantidad: 1, precio_unitario: "", margen: 30, precio_venta: "", fecha_vencimiento: "" });
 
 const ventaSugerida = (costo, upp, margen) => {
   const c = Number(costo);
@@ -83,6 +83,7 @@ export default function CompraPOS({ productos, proveedores, empleados }) {
         cantidad: Number(l.cantidad),
         precio_unitario: Number(l.precio_unitario) || 0,
         precio_venta: l.precio_venta === "" ? null : Number(l.precio_venta),
+        fecha_vencimiento: l.fecha_vencimiento || null,
       }));
       await endpoints.compras.create({
         proveedor: Number(proveedor),
@@ -161,6 +162,7 @@ export default function CompraPOS({ productos, proveedores, empleados }) {
             <span>Costo x paquete</span>
             <span>Ganancia %</span>
             <span>Venta x unidad</span>
+            <span>Vence (lote)</span>
             <span className="text-right">Subtotal</span>
             <span />
           </div>
@@ -178,6 +180,8 @@ export default function CompraPOS({ productos, proveedores, empleados }) {
                 onChange={(e) => setLine(idx, "margen", e.target.value)} />
               <input className="input" type="number" min="0" step="0.01" value={l.precio_venta}
                 onChange={(e) => setLine(idx, "precio_venta", e.target.value)} placeholder="0.00" />
+              <input className="input" type="date" value={l.fecha_vencimiento}
+                onChange={(e) => setLine(idx, "fecha_vencimiento", e.target.value)} title="Fecha de vencimiento del lote" />
               <span className="doc-line__sub">
                 {currency((Number(l.cantidad) || 0) * (Number(l.precio_unitario) || 0))}
               </span>

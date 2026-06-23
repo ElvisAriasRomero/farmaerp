@@ -2663,11 +2663,11 @@ p {
 
 /* Línea de compra (modelo 2b): producto, u/paq, cantidad, costo, venta, subtotal */
 .doc-line--compra {
-  grid-template-columns: minmax(160px, 0.9fr) 110px 88px 118px 92px 118px 104px 34px;
+  grid-template-columns: minmax(160px, 0.9fr) 110px 88px 118px 92px 118px 132px 104px 34px;
 }
 @media (max-width: 980px) {
   .doc-line--compra {
-    grid-template-columns: 1fr 64px 56px 84px 64px 84px;
+    grid-template-columns: 1fr 64px 56px 84px 64px 84px 110px;
   }
   .doc-line--compra .doc-line__sub,
   .doc-line--compra > button {

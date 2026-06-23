@@ -211,6 +211,39 @@ def alertas_stock_bajo() -> list:
     ]
 
 
+def alertas_vencimiento(dias_aviso: int = 30) -> list:
+    """Productos próximos a vencer (o ya vencidos) que aún tienen stock."""
+    from datetime import date, timedelta
+    from apps.productos.models import Producto
+
+    hoy = date.today()
+    limite = hoy + timedelta(days=dias_aviso)
+    qs = (
+        Producto.objects.filter(
+            fecha_vencimiento__isnull=False,
+            fecha_vencimiento__lte=limite,
+        )
+        .select_related("inventario")
+        .order_by("fecha_vencimiento")
+    )
+    out = []
+    for p in qs:
+        inv = getattr(p, "inventario", None)
+        stock = getattr(inv, "stock_actual", 0) or 0
+        if stock <= 0:
+            continue
+        dias_rest = (p.fecha_vencimiento - hoy).days
+        out.append({
+            "id_producto": p.id_producto,
+            "nombre": p.nombre,
+            "fecha_vencimiento": p.fecha_vencimiento.isoformat(),
+            "dias_restantes": dias_rest,
+            "vencido": dias_rest < 0,
+            "stock_actual": stock,
+        })
+    return out
+
+
 def generar_sugerencias_compra(periodo: str = "semanal") -> int:
     """Genera sugerencias de compra combinando stock y demanda predicha.
 
