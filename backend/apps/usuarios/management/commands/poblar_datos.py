@@ -117,6 +117,10 @@ class Command(BaseCommand):
                                  "seguro para correr al arrancar el contenedor).")
         parser.add_argument("--seed", type=int, default=42,
                             help="Semilla aleatoria para reproducibilidad.")
+        parser.add_argument("--pipeline", action="store_true",
+                            help="Tras poblar, ejecuta el pipeline de IA "
+                                 "(predice, entrena Prophet y sugiere). Pensado "
+                                 "para sembrar en el servidor.")
 
     def handle(self, *args, **opts):
         from apps.usuarios.models import Usuario, Rol
@@ -159,6 +163,26 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(
                 f"  No se pudo consolidar demanda ({exc}). "
                 "Puedes correrlo luego desde el pipeline."))
+
+        if opts["pipeline"]:
+            self.stdout.write("Ejecutando pipeline de IA...")
+            try:
+                from ml.predict import generar_y_guardar_predicciones
+                from ml.analytics import generar_sugerencias_compra
+                from ml.train_model import entrenar_todos
+                # Predicciones base (rapidas, respaldo media movil) para que la
+                # tabla nunca quede vacia aunque el entrenamiento falle/OOM.
+                generar_y_guardar_predicciones("semanal")
+                generar_sugerencias_compra("semanal")
+                # Entrenamiento Prophet (mejor esfuerzo) y refresco de predicciones.
+                resumen = entrenar_todos()
+                generar_y_guardar_predicciones("semanal")
+                generar_sugerencias_compra("semanal")
+                self.stdout.write(self.style.SUCCESS(
+                    f"  Pipeline IA completado: {resumen}"))
+            except Exception as exc:  # noqa: BLE001
+                self.stdout.write(self.style.WARNING(
+                    f"  Pipeline IA incompleto ({exc})."))
 
         self.stdout.write(self.style.SUCCESS("\nPoblado completado."))
         self.stdout.write(
@@ -210,6 +234,8 @@ class Command(BaseCommand):
                 Usuario, Rol, Empleado, Cliente, Proveedor,
                 Categoria, Producto, Inventario, Lote, Venta, DetalleVenta):
         from apps.inventario.services import actualizar_vencimiento_producto
+        from apps.compras.models import Compra, DetalleCompra
+        from apps.facturacion.models import Factura, Pago
 
         hoy = date.today()
 
@@ -305,6 +331,8 @@ class Command(BaseCommand):
             f"Generando ~{dias} dias de ventas (esto puede tardar unos segundos)...")
         total_ventas = 0
         total_detalles = 0
+        total_pagos = 0
+        total_facturas = 0
         for d in range(dias, 0, -1):
             dia = hoy - timedelta(days=d)
             factor = self._factor_estacional(dia, dias, d)
@@ -326,8 +354,9 @@ class Command(BaseCommand):
                     pu = prod.precio_venta or Decimal("0")
                     total += pu * qty
                     detalles.append((prod, qty, pu))
+                cli = random.choice(clientes)
                 venta = Venta.objects.create(
-                    cliente=random.choice(clientes),
+                    cliente=cli,
                     empleado=empleado,
                     total=total,
                     estado="completada",
@@ -346,8 +375,55 @@ class Command(BaseCommand):
                 Venta.objects.filter(pk=venta.pk).update(
                     fecha_venta=ts, fecha_creacion=ts)
                 total_ventas += 1
+
+                # Factura (en parte de las ventas) y pago siempre
+                factura = None
+                if random.random() < 0.35:
+                    factura = Factura.objects.create(
+                        venta=venta, numero_factura=f"F-{venta.pk:06d}",
+                        fecha_emision=dia, total=total, estado="pagada",
+                        nit_ci=str(random.randint(1000000, 9999999)),
+                        razon_social=cli.nombre,
+                    )
+                    Venta.objects.filter(pk=venta.pk).update(con_factura=True)
+                    total_facturas += 1
+                metodo = random.choices(
+                    ["efectivo", "tarjeta", "qr"], weights=[6, 3, 1])[0]
+                pago = Pago.objects.create(
+                    venta=venta, factura=factura, monto=total,
+                    metodo_pago=metodo, estado="completado",
+                )
+                Pago.objects.filter(pk=pago.pk).update(
+                    fecha_pago=ts, fecha_creacion=ts)
+                total_pagos += 1
         self.stdout.write(self.style.SUCCESS(
             f"Ventas: {total_ventas}  |  Detalles de venta: {total_detalles}"))
+        self.stdout.write(self.style.SUCCESS(
+            f"Pagos: {total_pagos}  |  Facturas: {total_facturas}"))
+
+        # --- Compras de reabastecimiento a proveedores ---
+        proveedores = list(Proveedor.objects.all())
+        num_compras = max(8, dias // 5)
+        total_compras = 0
+        for _ in range(num_compras):
+            dia_c = hoy - timedelta(days=random.randint(1, max(dias, 1)))
+            compra = Compra.objects.create(
+                proveedor=random.choice(proveedores),
+                fecha_pedido=dia_c, fecha_recepcion=dia_c,
+                total=Decimal("0"), empleado=empleado, estado="completada",
+            )
+            total_c = Decimal("0")
+            for prod, _rot in random.sample(productos, k=random.randint(2, 5)):
+                cant = random.randint(20, 100)
+                pu = prod.precio_compra or Decimal("1")
+                DetalleCompra.objects.create(
+                    compra=compra, producto=prod, cantidad=cant,
+                    precio_unitario=pu, unidades_por_paquete=1,
+                )
+                total_c += pu * cant
+            Compra.objects.filter(pk=compra.pk).update(total=total_c)
+            total_compras += 1
+        self.stdout.write(self.style.SUCCESS(f"Compras: {total_compras}"))
 
     # ------------------------------------------------------------------
     @staticmethod

@@ -102,6 +102,23 @@ ASGI_APPLICATION = "config.asgi.application"
 # ----------------------------------------------------------------------------
 # Base de datos
 # ----------------------------------------------------------------------------
+def _db_options():
+    """Opciones de conexion. Activa keepalives TCP para que conexiones
+    remotas (p.ej. la base externa de Render) no se caigan en pausas; y
+    permite forzar sslmode via DB_SSLMODE."""
+    opts = {
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+        "connect_timeout": 30,
+    }
+    sslmode = os.getenv("DB_SSLMODE")
+    if sslmode:
+        opts["sslmode"] = sslmode
+    return opts
+
+
 DATABASES = {
     "default": {
         "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
@@ -110,6 +127,7 @@ DATABASES = {
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
         "HOST": os.getenv("DB_HOST", "localhost"),
         "PORT": os.getenv("DB_PORT", "5432"),
+        "OPTIONS": _db_options(),
     }
 }
 
