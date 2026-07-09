@@ -37,6 +37,9 @@ export default function DocumentView({
 
   const [rows, setRows] = useState([]);
   const [count, setCount] = useState(0);
+  // true cuando el backend ya devolvió una página ({count, results});
+  // false cuando devolvió el array completo y hay que paginar en el cliente.
+  const [serverPaginated, setServerPaginated] = useState(false);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
@@ -46,13 +49,24 @@ export default function DocumentView({
 
   const pageSize = 20;
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
+  // Si el backend no paginó (array completo), recortamos la página en el cliente.
+  const displayRows = serverPaginated
+    ? rows
+    : rows.slice((page - 1) * pageSize, page * pageSize);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await api.list({ page });
-      setRows(data.results || (Array.isArray(data) ? data : []));
-      setCount(data.count ?? (data.results || data || []).length);
+      if (Array.isArray(data)) {
+        setRows(data);
+        setCount(data.length);
+        setServerPaginated(false);
+      } else {
+        setRows(data.results || []);
+        setCount(data.count ?? (data.results || []).length);
+        setServerPaginated(true);
+      }
     } catch (err) {
       toast.error("No se pudo cargar", parseApiError(err));
     } finally {
@@ -135,7 +149,7 @@ export default function DocumentView({
       </div>
 
       <div className="card card--fill">
-        <DataTable columns={allColumns} rows={rows} loading={loading} rowKey={idKey} />
+        <DataTable columns={allColumns} rows={displayRows} loading={loading} rowKey={idKey} />
         {totalPages > 1 && (
           <div className="pagination">
             <span className="pagination__info">Página {page} de {totalPages}</span>

@@ -26,7 +26,9 @@ class Producto(models.Model):
     )
     precio_compra = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    fecha_vencimiento = models.DateField(null=True, blank=True)
+    # La fecha de vencimiento vive en Lote (FEFO): un producto puede tener
+    # varios lotes con vencimientos distintos. El "proximo vencimiento" se
+    # calcula consultando el lote vigente mas proximo, no se guarda aqui.
     unidad_medida = models.CharField(max_length=50, null=True, blank=True)
     unidades_por_empaque = models.PositiveIntegerField(default=1)
     categoria = models.ForeignKey(

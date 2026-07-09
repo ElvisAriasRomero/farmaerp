@@ -42,5 +42,5 @@ EXPOSE 8000
 # Comando por defecto: aplica migraciones y arranca el servidor web.
 # (En Free no se permite preDeployCommand, por eso migramos aquí al iniciar.)
 # Worker/beat sobreescriben este comando en render.yaml.
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py ensure_superuser && (python manage.py poblar_datos --si-vacio --pipeline >> /tmp/seed.log 2>&1 &) && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile -"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py ensure_superuser && (python manage.py poblar_datos --si-vacio --meses 3 --pipeline >> /tmp/seed.log 2>&1 &) && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile -"]
 

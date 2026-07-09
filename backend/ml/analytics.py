@@ -115,7 +115,7 @@ def ventas_por_mes(meses: int = 12) -> list:
 
 
 def ventas_por_metodo(dias: int = 30) -> list:
-    """Reparto de los pagos por metodo (efectivo, qr, tarjeta) en el periodo."""
+    """Reparto de los pagos por metodo (efectivo, qr) en el periodo."""
     from apps.facturacion.models import Pago
 
     inicio, _ = _rango_fechas(dias)
@@ -212,34 +212,37 @@ def alertas_stock_bajo() -> list:
 
 
 def alertas_vencimiento(dias_aviso: int = 30) -> list:
-    """Productos próximos a vencer (o ya vencidos) que aún tienen stock."""
+    """Lotes próximos a vencer (o ya vencidos) que aún tienen stock.
+
+    El vencimiento vive en el lote (FEFO): se alerta por cada lote con
+    unidades disponibles cuya fecha de vencimiento cae dentro del margen.
+    """
     from datetime import date, timedelta
-    from apps.productos.models import Producto
+    from apps.inventario.models import Lote
 
     hoy = date.today()
     limite = hoy + timedelta(days=dias_aviso)
     qs = (
-        Producto.objects.filter(
+        Lote.objects.filter(
+            cantidad__gt=0,
             fecha_vencimiento__isnull=False,
             fecha_vencimiento__lte=limite,
         )
-        .select_related("inventario")
+        .select_related("producto")
         .order_by("fecha_vencimiento")
     )
     out = []
-    for p in qs:
-        inv = getattr(p, "inventario", None)
-        stock = getattr(inv, "stock_actual", 0) or 0
-        if stock <= 0:
-            continue
-        dias_rest = (p.fecha_vencimiento - hoy).days
+    for lote in qs:
+        dias_rest = (lote.fecha_vencimiento - hoy).days
         out.append({
-            "id_producto": p.id_producto,
-            "nombre": p.nombre,
-            "fecha_vencimiento": p.fecha_vencimiento.isoformat(),
+            "id_producto": lote.producto_id,
+            "nombre": lote.producto.nombre,
+            "id_lote": lote.id_lote,
+            "numero_lote": lote.numero_lote,
+            "fecha_vencimiento": lote.fecha_vencimiento.isoformat(),
             "dias_restantes": dias_rest,
             "vencido": dias_rest < 0,
-            "stock_actual": stock,
+            "stock_actual": lote.cantidad,
         })
     return out
 

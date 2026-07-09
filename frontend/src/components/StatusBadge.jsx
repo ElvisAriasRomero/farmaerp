@@ -25,7 +25,6 @@ const MAP = {
   generado: "green",
   // métodos de pago
   efectivo: "green",
-  tarjeta: "blue",
   qr: "cyan",
   // motivos
   bajo_stock: "amber",

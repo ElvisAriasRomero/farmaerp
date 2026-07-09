@@ -47,6 +47,9 @@ export default function CrudView({
 
   const [rows, setRows] = useState([]);
   const [count, setCount] = useState(0);
+  // true cuando el backend ya devolvió una página ({count, results});
+  // false cuando devolvió el array completo y hay que paginar en el cliente.
+  const [serverPaginated, setServerPaginated] = useState(false);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -79,6 +82,10 @@ export default function CrudView({
 
   const pageSize = 20;
   const totalPages = Math.max(1, Math.ceil(count / pageSize));
+  // Si el backend no paginó (array completo), recortamos la página en el cliente.
+  const displayRows = serverPaginated
+    ? rows
+    : rows.slice((page - 1) * pageSize, page * pageSize);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -89,9 +96,11 @@ export default function CrudView({
       if (Array.isArray(data)) {
         setRows(data);
         setCount(data.length);
+        setServerPaginated(false);
       } else {
         setRows(data.results || []);
         setCount(data.count ?? (data.results || []).length);
+        setServerPaginated(true);
       }
     } catch (err) {
       toast.error("No se pudo cargar", parseApiError(err));
@@ -218,7 +227,7 @@ export default function CrudView({
       toast.success("Eliminado", "El registro fue eliminado.");
       setTarget(null);
       // si borramos el último de la página, retrocede
-      if (rows.length === 1 && page > 1) setPage((p) => p - 1);
+      if (displayRows.length === 1 && page > 1) setPage((p) => p - 1);
       else fetchData();
     } catch (err) {
       toast.error("No se pudo eliminar", parseApiError(err));
@@ -298,7 +307,7 @@ export default function CrudView({
       </div>
 
       <div className="card card--fill">
-        <DataTable columns={allColumns} rows={rows} loading={loading} rowKey={idKey} />
+        <DataTable columns={allColumns} rows={displayRows} loading={loading} rowKey={idKey} />
 
         {totalPages > 1 && (
           <div className="pagination">

@@ -11,7 +11,6 @@ class EstadoFactura(models.TextChoices):
 
 class MetodoPago(models.TextChoices):
     EFECTIVO = "efectivo", "Efectivo"
-    TARJETA = "tarjeta", "Tarjeta"
     QR = "qr", "QR"
 
 

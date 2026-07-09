@@ -45,6 +45,8 @@ CATEGORIAS = [
     ("Dermatologicos", "Cremas y cuidado de la piel"),
     ("Cuidado personal", "Higiene y cuidado personal"),
     ("Material de curacion", "Vendas, gasas y antisepticos"),
+    ("Bebidas", "Aguas, gaseosas, jugos y energizantes"),
+    ("Snacks", "Golosinas, galletas y aperitivos"),
 ]
 
 # (nombre, categoria, precio_compra, precio_venta, rotacion_base)
@@ -80,6 +82,26 @@ PRODUCTOS = [
     ("Venda elastica 5cm", "Material de curacion", 4.00, 8.00, 2.5),
     ("Agua oxigenada 120ml", "Material de curacion", 2.50, 5.00, 3.0),
     ("Curitas surtidas x30", "Material de curacion", 3.50, 7.50, 4.0),
+    # --- Bebidas ---
+    ("Bebida energetica Red Bull 250ml", "Bebidas", 8.00, 14.00, 5.5),
+    ("Bebida energetica Volt 500ml", "Bebidas", 5.00, 9.00, 5.0),
+    ("Agua mineral 500ml", "Bebidas", 2.00, 4.00, 8.0),
+    ("Agua mineral 2L", "Bebidas", 4.00, 7.00, 3.5),
+    ("Gaseosa Coca-Cola 500ml", "Bebidas", 4.00, 7.50, 7.0),
+    ("Gaseosa Sprite 500ml", "Bebidas", 4.00, 7.50, 4.5),
+    ("Jugo de naranja 300ml", "Bebidas", 3.00, 6.00, 4.5),
+    ("Rehidratante deportivo 500ml", "Bebidas", 6.00, 11.00, 3.5),
+    ("Te helado limon 500ml", "Bebidas", 4.50, 8.00, 3.5),
+    # --- Snacks ---
+    ("Galletas rellenas x6", "Snacks", 3.00, 6.00, 5.5),
+    ("Papas fritas 120g", "Snacks", 7.00, 13.00, 4.5),
+    ("Chocolate con leche 40g", "Snacks", 4.00, 8.00, 5.5),
+    ("Chocolate con almendras 40g", "Snacks", 4.50, 9.00, 4.0),
+    ("Mani salado 100g", "Snacks", 3.00, 6.00, 4.0),
+    ("Caramelos surtidos x20", "Snacks", 2.00, 5.00, 6.0),
+    ("Chicles menta x10", "Snacks", 2.50, 5.00, 5.0),
+    ("Barra de cereal 25g", "Snacks", 3.50, 7.00, 3.5),
+    ("Galletas de agua x8", "Snacks", 2.00, 4.50, 3.5),
 ]
 
 PROVEEDORES = [
@@ -233,7 +255,6 @@ class Command(BaseCommand):
     def _poblar(self, meses, n_prod, dias,
                 Usuario, Rol, Empleado, Cliente, Proveedor,
                 Categoria, Producto, Inventario, Lote, Venta, DetalleVenta):
-        from apps.inventario.services import actualizar_vencimiento_producto
         from apps.compras.models import Compra, DetalleCompra
         from apps.facturacion.models import Factura, Pago
 
@@ -269,33 +290,28 @@ class Command(BaseCommand):
             )
         self.stdout.write(f"Proveedores: {Proveedor.objects.count()}")
 
-        # --- Clientes (cada uno con su usuario) ---
-        clientes = []
-        for i, nombre in enumerate(NOMBRES):
-            email = f"cliente{i+1}@demo.farmaerp.com"
-            u = Usuario.objects.filter(email=email).first()
-            if u is None:
-                u = Usuario.objects.create_user(
-                    email=email, password="demo12345", tipo="cliente")
-            cli, _ = Cliente.objects.get_or_create(
-                usuario=u,
-                defaults={"nombre": nombre,
-                          "telefono": f"6{random.randint(1000000, 9999999)}"},
-            )
-            clientes.append(cli)
-        self.stdout.write(f"Clientes: {len(clientes)}")
+        # --- Sin clientes de relleno ---
+        # Las ventas de ejemplo son de mostrador (consumidor final). Los
+        # clientes reales se registran desde el sistema/tienda.
+        self.stdout.write("Clientes: 0 (ventas a consumidor final)")
 
         # --- Productos + inventario + lotes ---
+        import re
         productos = []   # (Producto, rotacion_base)
         for idx, (nombre, cat, pc, pv, rot) in enumerate(PRODUCTOS[:n_prod]):
+            # El "xN" del nombre es el tamano del paquete: lo movemos a
+            # unidades_por_empaque y dejamos el nombre limpio.
+            m = re.search(r"\s*x(\d+)$", nombre)
+            uxe = int(m.group(1)) if m else 1
+            nombre_limpio = re.sub(r"\s*x\d+$", "", nombre).strip()
             prod, _ = Producto.objects.get_or_create(
-                nombre=nombre,
+                nombre=nombre_limpio,
                 defaults={
                     "categoria": cats[cat],
                     "precio_compra": Decimal(str(pc)),
                     "precio_venta": Decimal(str(pv)),
                     "unidad_medida": "caja",
-                    "unidades_por_empaque": 1,
+                    "unidades_por_empaque": uxe,
                     "codigo_barras": f"77{idx:08d}",
                 },
             )
@@ -322,7 +338,6 @@ class Command(BaseCommand):
             stock_total += cant
             inv.stock_actual = stock_total
             inv.save(update_fields=["stock_actual"])
-            actualizar_vencimiento_producto(prod)
             productos.append((prod, rot))
         self.stdout.write(f"Productos: {len(productos)} (con inventario y lotes)")
 
@@ -354,13 +369,15 @@ class Command(BaseCommand):
                     pu = prod.precio_venta or Decimal("0")
                     total += pu * qty
                     detalles.append((prod, qty, pu))
-                cli = random.choice(clientes)
                 venta = Venta.objects.create(
-                    cliente=cli,
+                    cliente=None,   # venta de mostrador: consumidor final
                     empleado=empleado,
                     total=total,
                     estado="completada",
-                    origen=random.choice(["mostrador", "mostrador", "tienda"]),
+                    # Los datos de ejemplo son todos ventas de mostrador.
+                    # Las reservas (origen="tienda") solo se crean con pedidos
+                    # reales de la tienda/movil, no se generan de relleno.
+                    origen="mostrador",
                 )
                 for prod, qty, pu in detalles:
                     DetalleVenta.objects.create(
@@ -383,12 +400,12 @@ class Command(BaseCommand):
                         venta=venta, numero_factura=f"F-{venta.pk:06d}",
                         fecha_emision=dia, total=total, estado="pagada",
                         nit_ci=str(random.randint(1000000, 9999999)),
-                        razon_social=cli.nombre,
+                        razon_social="Consumidor Final",
                     )
                     Venta.objects.filter(pk=venta.pk).update(con_factura=True)
                     total_facturas += 1
                 metodo = random.choices(
-                    ["efectivo", "tarjeta", "qr"], weights=[6, 3, 1])[0]
+                    ["efectivo", "qr"], weights=[3, 1])[0]
                 pago = Pago.objects.create(
                     venta=venta, factura=factura, monto=total,
                     metodo_pago=metodo, estado="completado",

@@ -16,8 +16,8 @@ const RANGES = [
   { value: 90, label: "90 días" },
 ];
 
-const METODO_LABEL = { efectivo: "Efectivo", qr: "QR", tarjeta: "Tarjeta" };
-const METODO_COLOR = { efectivo: "#16a34a", qr: "#2563eb", tarjeta: "#7c3aed" };
+const METODO_LABEL = { efectivo: "Efectivo", qr: "QR" };
+const METODO_COLOR = { efectivo: "#16a34a", qr: "#2563eb" };
 
 export default function Dashboard() {
   const { user } = useAuth();

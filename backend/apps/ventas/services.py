@@ -124,7 +124,7 @@ def confirmar_venta(venta, *, metodo_pago="efectivo", monto=None,
         referencia=referencia,
     )
 
-    # Solo el efectivo entra a la caja física (el QR/tarjeta va al banco).
+    # Solo el efectivo entra a la caja física (el QR va al banco).
     if (metodo_pago or "efectivo") == "efectivo":
         from apps.caja.services import registrar_entrada_efectivo
         registrar_entrada_efectivo(monto)

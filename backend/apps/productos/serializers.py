@@ -19,16 +19,25 @@ class ProductoSerializer(serializers.ModelSerializer):
     stock_actual = serializers.IntegerField(
         source="inventario.stock_actual", read_only=True, default=0
     )
+    # La fecha de vencimiento ya no se guarda en Producto: se deriva del lote
+    # vigente mas proximo a vencer (FEFO). Solo lectura.
+    proximo_vencimiento = serializers.SerializerMethodField()
 
     class Meta:
         model = Producto
         exclude = ("categoria",)
         # El costo NO se escribe a mano: lo fija la recepcion de la compra.
-        # La fecha de vencimiento es automatica: la gestionan los lotes (FEFO).
         read_only_fields = (
             "precio_compra", "precio_venta", "unidades_por_empaque",
-            "fecha_vencimiento",
         )
+
+    def get_proximo_vencimiento(self, obj):
+        lote = (
+            obj.lotes.filter(cantidad__gt=0, fecha_vencimiento__isnull=False)
+            .order_by("fecha_vencimiento", "id_lote")
+            .first()
+        )
+        return lote.fecha_vencimiento if lote else None
 
     def validate(self, attrs):
         # El precio de venta no puede ser menor al costo (solo si ya hay costo).

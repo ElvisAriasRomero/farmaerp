@@ -1,7 +1,7 @@
 import CrudView from "../components/CrudView.jsx";
 import { endpoints } from "../services/api.js";
 import useOptions from "../hooks/useOptions.js";
-import { currency, dateShort } from "../utils/format.js";
+import { currency } from "../utils/format.js";
 import Icon from "../components/Icon.jsx";
 
 export default function Productos() {
@@ -17,10 +17,19 @@ export default function Productos() {
       render: (r) => (
         <div className="u-flex u-items-center u-gap-12">
           <span style={{
-            width: 36, height: 36, background: "var(--brand-50)",
-            color: "var(--brand-700)", display: "grid", placeItems: "center", flexShrink: 0,
+            position: "relative", width: 36, height: 36, background: "var(--brand-50)",
+            color: "var(--brand-700)", display: "grid", placeItems: "center",
+            flexShrink: 0, overflow: "hidden", borderRadius: 8,
           }}>
             <Icon name="pill" size={18} />
+            {r.foto && (
+              <img
+                src={r.foto}
+                alt={r.nombre}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            )}
           </span>
           <div>
             <div className="cell-strong">{r.nombre}</div>
@@ -65,7 +74,6 @@ export default function Productos() {
         return <span className={`badge badge--${s <= 0 ? "red" : s < 10 ? "amber" : "green"}`}>{s}</span>;
       },
     },
-    { key: "fecha_vencimiento", header: "Vence", render: (r) => dateShort(r.fecha_vencimiento) },
   ];
 
   // El producto es SOLO identidad. Costo, venta y unidades por paquete se

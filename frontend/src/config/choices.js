@@ -28,7 +28,6 @@ export const ESTADO_FACTURA = [
 ];
 export const METODO_PAGO = [
   { value: "efectivo", label: "Efectivo" },
-  { value: "tarjeta", label: "Tarjeta" },
   { value: "qr", label: "QR" },
 ];
 export const ESTADO_PAGO = [
